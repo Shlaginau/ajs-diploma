@@ -9,7 +9,12 @@
  *
  */
 export function* characterGenerator(allowedTypes, maxLevel) {
-  // TODO: write logic here
+  while (true) {
+    const characterType = allowedTypes[Math.floor(Math.random() * allowedTypes.length)];
+    const characterLevel = Math.ceil(Math.random() * maxLevel);
+    // eslint-disable-next-line new-cap
+    yield new characterType(characterLevel);
+  }
 }
 
 /**
@@ -17,8 +22,15 @@ export function* characterGenerator(allowedTypes, maxLevel) {
  * @param allowedTypes массив классов
  * @param maxLevel максимальный возможный уровень персонажа
  * @param characterCount количество персонажей, которое нужно сформировать
- * @returns экземпляр Team, хранящий экземпляры персонажей. Количество персонажей в команде - characterCount
+ * @returns экземпляр Team, хранящий экземпляры персонажей.
+ * Количество персонажей в команде - characterCount
  * */
 export function generateTeam(allowedTypes, maxLevel, characterCount) {
-  // TODO: write logic here
+  const team = [];
+
+  for (let i = 0; i < characterCount; i += 1) {
+    const generator = characterGenerator(allowedTypes, maxLevel);
+    team.push(generator.next().value);
+  }
+  return team;
 }
