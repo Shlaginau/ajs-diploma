@@ -117,14 +117,40 @@ export default class GameController {
   }
 
   onCellClick(index) {
-    // TODO: react to click
+    const player = this.getCharacterInfo(index);
+    if (player && this.isPlayerCharacter(index)) {
+      this.gamePlay.cells.forEach((elem) => elem.classList.remove('selected-green'));
+      this.gamePlay.cells.forEach((elem) => elem.classList.remove('selected-yellow'));
+      this.gamePlay.selectCell(index);
+      this.gameState.selected = index;
+    } else {
+      GamePlay.showError('Выберите своего персонажа!');
+    }
   }
 
   onCellEnter(index) {
-    // TODO: react to mouse enter
+    const characterInfo = this.getCharacterInfo(index);
+    if (characterInfo) {
+      const char = characterInfo.character;
+      const message = `\u{1F396}${char.level} \u{2694}${char.attack} \u{1F6E1}${char.defence} \u{2764}${char.health}`;
+      this.gamePlay.showCellTooltip(message, index);
+    }
   }
 
   onCellLeave(index) {
-    // TODO: react to mouse leave
+    this.gamePlay.hideCellTooltip(index);
+  }
+
+  getCharacterInfo(index) {
+    return this.gameState.allPositions.find((char) => char.position === index);
+  }
+
+  isPlayerCharacter(index) {
+    const characterInfo = this.getCharacterInfo(index);
+    if (characterInfo) {
+      const player = characterInfo.character;
+      return this.playerCharacters.some((charClass) => player instanceof charClass);
+    }
+    return false;
   }
 }
