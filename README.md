@@ -1,3 +1,5 @@
+![CI](https://github.com/Shlaginau/ajs-diploma/actions/workflows/web.yml/badge.svg)
+
 # Дипломное задание к курсу «Продвинутый JavaScript». Retro Game
 
 ###### tags: `netology` `advanced js`

@@ -216,7 +216,7 @@ export default class GamePlay {
       cell.appendChild(damageEl);
 
       damageEl.addEventListener('animationend', () => {
-        cell.removeChild(damageEl);
+        damageEl.style.display = 'none';
         resolve();
       });
     });

@@ -6,5 +6,9 @@ export default class Bowman extends Character {
     this.attack = 25;
     this.defence = 25;
     this.health = 100;
+
+    for (let i = 1; i < level; i += 1) {
+      this.levelUp();
+    }
   }
 }
