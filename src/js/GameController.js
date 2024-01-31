@@ -145,7 +145,7 @@ export default class GameController {
       this.playerTeam = new Team();
       this.opponentTeam = new Team();
 
-      state.allPositions.forEach((elem) => {
+      this.gameState.allPositions = state.allPositions.map((elem) => {
         let char;
         switch (elem.character.type) {
           case 'bowman':
@@ -170,17 +170,18 @@ export default class GameController {
             GamePlay.showError('Неизвестный тип персонажа');
         }
         char.health = elem.character.health;
+        const positionedChar = new PositionedCharacter(char, elem.position);
+
         if (this.playerCharacters.includes(char.constructor)) {
           this.playerTeam.add(char);
         } else {
           this.opponentTeam.add(char);
         }
-        this.gameState.allPositions.push(new PositionedCharacter(char, elem.position));
+        return positionedChar;
       });
 
       const theme = themes.find((t) => t.level === this.gameState.level);
       this.gamePlay.drawUi(theme.name);
-
       this.gamePlay.redrawPositions(this.gameState.allPositions);
     } else {
       GamePlay.showError('Нет доступных сохранений');
