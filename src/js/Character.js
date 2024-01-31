@@ -27,9 +27,9 @@ export default class Character {
 
   levelUp() {
     this.level += 1;
-    this.attack = Number(Math.max(this.attack, this.attack * (0.8 + this.health / 100)).toFixed(0));
+    this.attack = Math.round(Math.max(this.attack, this.attack * (0.8 + this.health / 100)));
     // eslint-disable-next-line max-len
-    this.defence = Number(Math.max(this.defence, this.defence * (0.8 + this.health / 100).toFixed(0)));
-    this.health = Number(Math.min(this.health + 80, 100).toFixed(0));
+    this.defence = Math.round(Math.max(this.defence, this.defence * (0.8 + this.health / 100)));
+    this.health = Math.round(Math.min(this.health + 80, 100));
   }
 }

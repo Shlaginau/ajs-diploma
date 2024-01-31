@@ -514,14 +514,14 @@ export default class GameController {
       return;
     }
 
-    const damage = Math.max(
+    const damage = Math.round(Math.max(
       attacker.character.attack - target.character.defence,
       attacker.character.attack * 0.1,
-    );
+    ));
 
     await this.gamePlay.showDamage(targetIndex, damage);
 
-    const updatedHealth = Number((target.character.health - damage).toFixed(0));
+    const updatedHealth = Math.round(target.character.health - damage);
 
     target.character.health = updatedHealth;
 
@@ -539,7 +539,7 @@ export default class GameController {
   }
 
   static calculateDamage(attacker, target) {
-    return Math.max(attacker.attack - target.defence, attacker.attack * 0.1);
+    return Math.round(Math.max(attacker.attack - target.defence, attacker.attack * 0.1));
   }
 
   static isCharacterOfTeam(character, team) {
