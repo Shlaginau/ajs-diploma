@@ -1,6 +1,6 @@
 /* eslint-disable max-len */
 import GamePlay from './GamePlay';
-import GameState from './GameState';
+import GameState, { MAX_LEVEL } from './GameState';
 import themes from './themes';
 import cursors from './cursors';
 import PositionedCharacter from './PositionedCharacter';
@@ -26,6 +26,7 @@ export default class GameController {
     this.opponentTeam = new Team();
     this.playerPositions = [];
     this.opponentPositions = [];
+    this.isGameBlocked = false;
   }
 
   init() {
@@ -119,13 +120,13 @@ export default class GameController {
     this.gameState.level = 1;
     this.gameState.allPositions = [];
     this.gameState.points = 0;
-    this.gameState.selected = null;
+    this.gameState.setSelectedIndex(null);
     this.playerTeam.addAll(generateTeam(this.playerCharacters, 1, 2));
     this.opponentTeam.addAll(generateTeam(this.opponentCharacters, 1, 2));
     this.teamsPosition(this.playerTeam, this.calculatePlayerPositions());
     this.teamsPosition(this.opponentTeam, this.calculateOpponentPositions());
     this.gamePlay.redrawPositions(this.gameState.allPositions);
-    this.gamePlay.cells.forEach((elem) => elem.classList.remove('selected-yellow'));
+    this.gamePlay.deselectCellsByColor(['selected-yellow']);
 
     GamePlay.showMessage(`Уровень ${this.gameState.level}`);
   }
@@ -189,6 +190,8 @@ export default class GameController {
   }
 
   onCellEnter(index) {
+    if (this.isGameBlocked) return;
+
     const hoveredCharacter = this.getCharacterInfo(index);
     const selectedCharacter = this.isPlayerCharacter(index);
 
@@ -228,13 +231,15 @@ export default class GameController {
   }
 
   onCellClick(index) {
+    if (this.isGameBlocked) return;
+
     const hoveredCharacter = this.getCharacterInfo(index);
     const selectedCharacter = this.isPlayerCharacter(index);
 
     if (selectedCharacter) {
-      this.gamePlay.cells.forEach((elem) => elem.classList.remove('selected-green', 'selected-yellow'));
+      this.gamePlay.deselectCellsByColor(['selected-yellow', 'selected-green']);
       this.gamePlay.selectCell(index);
-      this.gameState.selected = index;
+      this.gameState.setSelectedIndex(index);
       return;
     }
 
@@ -252,10 +257,12 @@ export default class GameController {
   }
 
   onCellLeave(index) {
+    if (this.isGameBlocked) return;
+
     this.gamePlay.hideCellTooltip(index);
     this.gamePlay.setCursor(cursors.auto);
-    this.gamePlay.cells.forEach((elem) => elem.classList.remove('selected-red'));
-    this.gamePlay.cells.forEach((elem) => elem.classList.remove('selected-green'));
+    this.gamePlay.deselectCellsByColor(['selected-red']);
+    this.gamePlay.deselectCellsByColor(['selected-green']);
   }
 
   getCharacterInfo(index) {
@@ -275,9 +282,9 @@ export default class GameController {
     const char = this.getCharacterInfo(index);
 
     if (char) {
-      this.gameState.selected = index;
+      this.gameState.setSelectedIndex(index);
     } else {
-      this.gameState.selected = null;
+      this.gameState.setSelectedIndex(null);
     }
     return char;
   }
@@ -298,30 +305,13 @@ export default class GameController {
       return false;
     }
 
-    const selectedCharacter = selectedPositionedCharacter.character;
     const selectedPosition = this.indexToRowCol(selectedPositionedCharacter.position);
     const targetPositionRowCol = this.indexToRowCol(index);
 
     const rowDiff = Math.abs(targetPositionRowCol.row - selectedPosition.row);
     const colDiff = Math.abs(targetPositionRowCol.col - selectedPosition.col);
 
-    let maxMoveDistance;
-    switch (selectedCharacter.constructor) {
-      case Swordsman:
-      case Undead:
-        maxMoveDistance = 4;
-        break;
-      case Bowman:
-      case Vampire:
-        maxMoveDistance = 2;
-        break;
-      case Magician:
-      case Daemon:
-        maxMoveDistance = 1;
-        break;
-      default:
-        return false;
-    }
+    const maxMoveDistance = selectedPositionedCharacter.character.moveDistance;
 
     const isCellFree = !this.getCharacterInfo(index);
     const isRowMove = rowDiff <= maxMoveDistance && colDiff === 0;
@@ -339,30 +329,13 @@ export default class GameController {
       return false;
     }
 
-    const selectedCharacter = selectedPositionedCharacter.character;
     const selectedPosition = this.indexToRowCol(selectedPositionedCharacter.position);
     const targetPositionRowCol = this.indexToRowCol(index);
 
     const rowDiff = Math.abs(targetPositionRowCol.row - selectedPosition.row);
     const colDiff = Math.abs(targetPositionRowCol.col - selectedPosition.col);
 
-    let maxMoveDistance;
-    switch (selectedCharacter.constructor) {
-      case Swordsman:
-      case Undead:
-        maxMoveDistance = 4;
-        break;
-      case Bowman:
-      case Vampire:
-        maxMoveDistance = 2;
-        break;
-      case Magician:
-      case Daemon:
-        maxMoveDistance = 1;
-        break;
-      default:
-        return false;
-    }
+    const maxMoveDistance = selectedPositionedCharacter.character.moveDistance;
 
     const isCellFree = !this.getCharacterInfo(index);
     const isRowMove = rowDiff <= maxMoveDistance && colDiff === 0;
@@ -394,24 +367,7 @@ export default class GameController {
       return false;
     }
 
-    let maxAttackRadius;
-
-    switch (attackerCharacter.constructor) {
-      case Swordsman:
-      case Undead:
-        maxAttackRadius = 1;
-        break;
-      case Bowman:
-      case Vampire:
-        maxAttackRadius = 2;
-        break;
-      case Magician:
-      case Daemon:
-        maxAttackRadius = 4;
-        break;
-      default:
-        return false;
-    }
+    const maxAttackRadius = attackerCharacter.attackRadius;
 
     const canAttackResult = rowDiff <= maxAttackRadius && colDiff <= maxAttackRadius;
 
@@ -451,8 +407,8 @@ export default class GameController {
 
   async opponentTurn() {
     if (!this.gameState.isUsersTurn) {
-      const opponentChars = this.gameState.allPositions.filter((posChar) => GameController.isCharacterOfTeam(posChar.character, this.opponentCharacters));
-      const playerChars = this.gameState.allPositions.filter((posChar) => GameController.isCharacterOfTeam(posChar.character, this.playerCharacters));
+      const opponentChars = this.gameState.allPositions.filter((posChar) => this.opponentTeam.has(posChar.character));
+      const playerChars = this.gameState.allPositions.filter((posChar) => this.playerTeam.has(posChar.character));
 
       if (opponentChars.length === 0 || playerChars.length === 0) {
         return;
@@ -483,7 +439,7 @@ export default class GameController {
       } else {
         const randomMoverIndex = Math.floor(Math.random() * opponentChars.length);
         const mover = opponentChars[randomMoverIndex];
-        this.gameState.selected = mover.position;
+        this.gameState.setSelectedIndex(mover.position);
         const moveTo = this.getRandomMove(mover.position);
         if (moveTo !== null) {
           this.moveOpponentCharacter(mover.position, moveTo);
@@ -530,7 +486,7 @@ export default class GameController {
       this.removeCharacterFromTeam(target.character);
       if (targetIndex === this.gameState.selected) {
         this.gamePlay.deselectCell(targetIndex);
-        this.gameState.selected = null;
+        this.gameState.setSelectedIndex(null);
       }
     }
 
@@ -540,10 +496,6 @@ export default class GameController {
 
   static calculateDamage(attacker, target) {
     return Math.round(Math.max(attacker.attack - target.defence, attacker.attack * 0.1));
-  }
-
-  static isCharacterOfTeam(character, team) {
-    return team.some((charClass) => character instanceof charClass);
   }
 
   static selectTargetForAttack(playerCharacters) {
@@ -571,8 +523,10 @@ export default class GameController {
     const livingPlayerCharacters = this.gameState.allPositions.filter((posChar) => this.playerCharacters.includes(posChar.character.constructor));
 
     if (livingOpponents.length === 0) {
-      if (this.gameState.level === 4) {
+      if (this.gameState.level === MAX_LEVEL) {
         GamePlay.showMessage('Поздравляем! Вы победитель!');
+        this.gamePlay.deselectCellsByColor(['selected-red', 'selected-green', 'selected-yellow']);
+        this.isGameBlocked = true;
       } else {
         GamePlay.showMessage('Вы перешли на следующий уровень!');
         this.gameState.level += 1;

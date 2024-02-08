@@ -195,8 +195,11 @@ export default class GamePlay {
 
   deselectCell(index) {
     const cell = this.cells[index];
-    cell.classList.remove(...Array.from(cell.classList)
-      .filter((o) => o.startsWith('selected')));
+    cell.classList.remove(...Array.from(cell.classList).filter((o) => o.startsWith('selected')));
+  }
+
+  deselectCellsByColor(colors) {
+    this.cells.forEach((cell) => colors.forEach((color) => cell.classList.remove(color)));
   }
 
   showCellTooltip(message, index) {

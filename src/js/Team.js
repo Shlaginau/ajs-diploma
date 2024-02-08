@@ -25,11 +25,15 @@ export default class Team {
   }
 
   addAll(characters) {
-    this.characters = new Set([...this.characters, ...characters]);
+    characters.forEach((character) => this.add(character));
   }
 
   delete(character) {
     this.characters.delete(character);
+  }
+
+  has(character) {
+    return this.characters.has(character);
   }
 
   toArray() {

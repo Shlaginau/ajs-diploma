@@ -9,9 +9,22 @@ export default class GameState {
   }
 
   static from(object) {
-    if (typeof object === 'object') {
-      return object;
-    }
-    return null;
+    const gameState = new GameState();
+    Object.assign(gameState, object);
+    return gameState;
+  }
+
+  setSelectedIndex(index) {
+    this.selected = index;
+  }
+
+  setLevel(level) {
+    this.level = level;
+  }
+
+  addPoints(points) {
+    this.points += points;
   }
 }
+
+export const MAX_LEVEL = 4;
